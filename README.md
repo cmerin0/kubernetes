@@ -11,10 +11,10 @@
 
 ## Context and Namespaces 
 
-> kubectl config view -> View kubeconfig.
-> kubectl config use-context <context_name>: -> Switch context
-> kubectl config set-context --current --namespace=<namespace_name> -> Set default namespace for current context.
-> kubectl get all -n <namespace> -> Get all resources in a specific namespace.
+`kubectl config view` -> View kubeconfig.
+`kubectl config use-context <context_name>`: -> Switch context
+`kubectl config set-context --current --namespace=<namespace_name>` -> Set default namespace for current context.
+`kubectl get all -n <namespace>` -> Get all resources in a specific namespace.
 
 ## Set Up User Authentication
 
