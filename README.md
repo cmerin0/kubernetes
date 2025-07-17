@@ -4,7 +4,8 @@
 ## Useful files for Kubernets functioning
 
 ### kube-apiserver
-
+> Location: `/etc/kubernetes/manifests/kube-apiserver.yaml`
+> View Running Process: `ps -ef | grep kube-apiserver`
 ### kube-config
 
 ### Role, RoleBinding, ClusterBinding, ClusterRoleBinding
