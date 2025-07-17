@@ -1,0 +1,95 @@
+# An RBAC Role or ClusterRole contains rules that represent a set of permissions. 
+#Permissions are purely additive (there are no "deny" rules).
+
+# Verbs available: get, list, watch, create, update, patch, delete, deletecollection, impersonate, bind, escalate, proxy
+# apiGroups and Resources can be seen by using `kubectl api-resources`
+
+# A Role always sets permissions within a particular namespace; when you create a Role, you have to specify the namespace it belongs in.
+
+# Example of a Role that allows reading pods in the development namespace:
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  namespace: development
+  name: pod-reader
+rules:
+- apiGroups: [""] # "" indicates the core API group
+  resources: ["pods", "pods/logs"] # "pods/logs" is a subresource of pods
+  verbs: ["get", "watch", "list"]
+- apiGroups: ["apps"] # "apps" is a different API group
+  resources: ["deployments", "replicasets"]
+  verbs: ["get", "watch", "list"]
+- apiGroups: [""]
+  resources: ["configmaps"]
+  resourceNames: ["my-configmap"] # "resourceNames" limits the rule to a specific ConfigMap
+  verbs: ["get", "update"]
+
+## With imperative commands: kubectl create role pod-reader --verb=get,list,watch --resource=pods --resource=pods/logs --namespace=development
+
+
+---
+# ClusterRole, by contrast, is a non-namespaced resource. The resources have different names (Role and ClusterRole) 
+# because a Kubernetes object always has to be either namespaced or not namespaced; it can't be both.
+
+# Example of a ClusterRole that allows reading secrets in all namespaces:
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: secret-reader # "namespace" omitted since ClusterRoles are not namespaced
+rules:
+- apiGroups: [""]
+  #
+  # at the HTTP level, the name of the resource for accessing Secret
+  # objects is "secrets"
+  resources: ["secrets"]
+  verbs: ["get", "watch", "list"]
+
+## With imperative commands: kubectl create clusterrole secret-reader --verb=get,watch,list --resource=secrets
+
+---
+# A role binding grants the permissions defined in a role to a user or set of users. 
+# It holds a list of subjects (users, groups, or service accounts), and a reference to the role being granted. 
+# A RoleBinding grants permissions within a specific namespace whereas a ClusterRoleBinding grants that access cluster-wide.
+
+# Example of a RoleBinding that grants the "pod-reader" role to a user named "jane" in the "development" namespace:
+
+apiVersion: rbac.authorization.k8s.io/v1
+# This role binding allows "JoeDoe" and "JaneDoe" to read pods in the "production" namespace.
+# You need to already have a Role named "pod-reader" in that namespace.
+kind: RoleBinding
+metadata:
+  name: read-pods
+  namespace: production
+subjects:
+- kind: User
+  name: JoeDoe      # "name" is case sensitive
+  apiGroup: rbac.authorization.k8s.io
+- kind: User
+  name: JaneDoe
+  apiGroup: rbac.authorization.k8s.io
+roleRef:            # "roleRef" specifies the binding to a Role / ClusterRole
+  kind: Role        # this must be Role or ClusterRole
+  name: pod-reader  # this must match the name of the Role or ClusterRole you wish to bind to
+  apiGroup: rbac.authorization.k8s.io
+
+# With imperative commands: kubectl create rolebinding read-pods --role=pod-reader --user=JoeDoe --user=JaneDoe --namespace=production
+
+---
+# Example of a ClusterRoleBinding that grants the "secret-reader" ClusterRole to anyone in the "manager" group across all namespaces:
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: read-secrets-global
+subjects:
+- kind: Group
+  name: manager # Name is case sensitive
+  apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: ClusterRole
+  name: secret-reader
+  apiGroup: rbac.authorization.k8s.io
+
+## With imperative commands: kubectl create clusterrolebinding read-secrets-global --clusterrole=secret-reader --group=manager
+
