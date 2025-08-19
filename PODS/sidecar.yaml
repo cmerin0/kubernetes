@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: my-sidecar-pod
+spec:
+  containers:
+  - name: main-app
+    image: busybox
+    command: ["sh", "-c", "echo 'Main app is running' && sleep 3600"]
+    volumeMounts:
+    - name: shared-data
+      mountPath: /data
+
+  - name: log-writer
+    image: busybox
+    command: ["sh", "-c", "while true; do echo 'Sidecar logging...' >> /data/logs.txt; sleep 1; done"]
+    volumeMounts:
+    - name: shared-data
+      mountPath: /data
+
+  volumes:
+  - name: shared-data
+    emptyDir: {}

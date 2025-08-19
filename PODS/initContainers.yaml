@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: my-init-pod
+spec:
+  # The init container runs first
+  initContainers:
+  - name: init-db
+    image: busybox
+    command: ["sh", "-c", "echo 'Waiting for database to be ready...' && sleep 5"]
+  
+  # The main application containers run after the init container completes
+  containers:
+  - name: my-app-container
+    image: busybox
+    command: ["sh", "-c", "echo 'Main app started!' && sleep 3600"]

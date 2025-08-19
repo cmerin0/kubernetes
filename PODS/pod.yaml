@@ -1,0 +1,130 @@
+# Pod metadata
+apiVersion: v1
+kind: Pod
+metadata:
+  name: my-pod      # Name of the pod
+  labels:           # Labels for the pod
+    app: nginx
+    env: prod
+  annotations:      # annotations of the pod
+    example.com/some-annotation: "some-value"
+    example.com/another-annotation: "another-value"
+spec:
+  # Container specifications
+  containers:
+  - name: nginx-container
+    image: nginx:1.25
+    imagePullPolicy: IfNotPresent             # Image pull policy, other options are: Always, Never (container wide setting)
+    command: ["/bin/sh"]                      # Command to run in the container
+    args: ["-c", "echo Hello Kubernetes!"]    # Arguments for the command
+    ports:
+    - containerPort: 80
+      protocol: TCP
+    env:                                      # Environment variables for the container
+    - name: ENV_VAR_NAME
+      value: "value"
+    - name: ANOTHER_VAR
+      value: "another_value"
+    envFrom:                                  # Source for environment variables in config map
+    - configMapRef:
+        name: my-configmap
+    - secretRef:
+        name: my-secret
+    resources:                                # Resource requests (minimum) and limits (maximum)
+      requests:
+        cpu: 250m
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+    volumeMounts:                             # Mount points for volumes
+    - name: data-volume
+      mountPath: /data
+    - name: config-volume
+      mountPath: /etc/config
+    # Health checks
+    # Liveness probe checks determines if a container is still running and healthy. 
+    # Its primary goal is to detect deadlocked or unresponsive applications that are not self-recovering
+    # On fail: Kubernetes restarts the container. This ensures that a misbehaving or hung application is brought back to a working state
+    livenessProbe:                                                  
+      httpGet:
+        path: /healthz
+        port: 80
+      initialDelaySeconds: 30
+      periodSeconds: 10
+    # Readiness probe checks if a container is ready to accept traffic.
+    # This is crucial for applications that require time to initialize, load configurations, 
+    # connect to dependencies, or warm up caches before being able to serve requests.
+    # On fail: Kubernetes temporarily stops sending traffic to the container. The container is not restarted; it is simply isolated from new requests until it reports itself as ready again.
+    readinessProbe:
+      httpGet:
+        path: /ready
+        port: 80
+      initialDelaySeconds: 5
+      periodSeconds: 5
+    # Security Context defines the privilege and access control settings for individual Pods or containers within a Kubernetes cluster.
+    securityContext:
+      runAsUser: 1000                   # User ID to run the container as 
+      runAsGroup: 3000                  # Group ID to run the container as
+      readOnlyRootFilesystem: true      # Prevent write access to root filesystem
+      capabilities:                     # Linux capabilities to add or drop
+        add: ["NET_ADMIN", "SYS_TIME"]
+  # Volumes are storage resources that can be shared among containers in a Pod.
+  volumes:
+  - name: data-volume
+    emptyDir: {}                        # Ephemeral storage that is created when the Pod is assigned to a Node
+  - name: config-volume
+    configMap:                          # ConfigMap volume source
+      name: my-configmap
+  # Pod-wide settings
+  restartPolicy: Never                  # Restart policy for the entire Pod, other options are: Always, OnFailure
+  nodeSelector:                         # Node selection criteria (simplest way to select a node in this case if disk type is important)
+    disktype: ssd
+  affinity:                             # Affinity rules for scheduling Pods in this case it matches the Architecture of the node as AMD64
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: kubernetes.io/arch
+            operator: In
+            values:
+            - amd64
+  tolerations:                           # Tolerations for scheduling Pods on nodes with specific taints
+  - key: "key"
+    operator: "Equal"
+    value: "value"
+    effect: "NoSchedule"
+  securityContext:                       # Security Context in Pod-level configuration, defines privilege and access control settings
+    runAsUser: 1000
+    runAsGroup: 3000
+    fsGroup: 2000
+  serviceAccountName: my-serviceaccount  # Service account to use for the Pod
+  priorityClassName: high-priority       # Priority class for the Pod
+  runtimeClassName: gvisor               # Runtime class for the Pod
+  hostNetwork: false
+  hostPID: false
+  hostIPC: false
+  shareProcessNamespace: true
+  dnsPolicy: ClusterFirst
+  dnsConfig:
+    nameservers:
+      - 1.2.3.4
+    searches:
+      - ns1.svc.cluster-domain.example
+      - my.dns.search.suffix
+    options:
+      - name: ndots
+        value: "2"
+      - name: edns0
+  hostAliases:
+  - ip: "127.0.0.1"
+    hostnames:
+    - "foo.local"
+    - "bar.local"
+  topologySpreadConstraints:
+  - maxSkew: 1
+    topologyKey: zone
+    whenUnsatisfiable: DoNotSchedule
+    labelSelector:
+      matchLabels:
+        app: nginx

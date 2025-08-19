@@ -27,7 +27,6 @@ rules:
 
 ## With imperative commands: kubectl create role pod-reader --verb=get,list,watch --resource=pods --resource=pods/logs --namespace=development
 
-
 ---
 # ClusterRole, by contrast, is a non-namespaced resource. The resources have different names (Role and ClusterRole) 
 # because a Kubernetes object always has to be either namespaced or not namespaced; it can't be both.
@@ -92,4 +91,3 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
 
 ## With imperative commands: kubectl create clusterrolebinding read-secrets-global --clusterrole=secret-reader --group=manager
-
