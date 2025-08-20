@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-app-deployment  # The name of the Deployment
+  labels:
+    app: my-app             # Labels for identifying this Deployment
+spec:
+  replicas: 3               # The desired number of Pod replicas
+  selector:
+    matchLabels:
+      app: my-app           # A selector to find Pods to manage. Must match the Pod template's labels.
+  strategy:
+    type: RollingUpdate     # The update strategy, 'RollingUpdate' is the default for Deployments, we also have 'Recreate' (not recommended)
+    rollingUpdate:
+      maxSurge: 25%         # The maximum number of Pods that can be created above the desired replica count
+      maxUnavailable: 25%   # The maximum number of Pods that can be unavailable during the update
+  template:
+    metadata:
+      labels:
+        app: my-app         # Labels for the Pods created by this Deployment
+    spec:
+      containers:
+      - name: my-app-container
+        image: nginx:1.21.6 # The container image to use
+        ports:
+        - containerPort: 80 # The port the application listens on
+        resources:
+          limits:
+            memory: "128Mi"
+            cpu: "500m"
+          requests:
+            memory: "64Mi"
+            cpu: "250m"

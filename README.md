@@ -120,6 +120,37 @@ A Pod is the smallest and most fundamental unit in Kubernetes. It represents a s
 
 ---
 
+## 🔐 Deployments, Replicasets and Rollouts   
+
+1. **Deployments:**
+
+A Deployment is a higher-level Kubernetes object that provides declarative updates for Pods and ReplicaSets. You describe the desired state of your application in a Deployment manifest, and the Deployment controller works constantly to ensure the actual state matches the desired state.
+A Deployment manages a ReplicaSet -> ReplicaSet manages a set of Pods -> Pod contains one or more containers. 
+
+When you create or update a Deployment, it automatically creates a new ReplicaSet. If you update the Deployment's Pod template (e.g., change the container image), a new ReplicaSet is created for the new version and the old one is scaled down. This ensures that you never have to manually touch a ReplicaSet or Pod.
+
+```sh
+  kubectl create deployment <name> --image=nginx --replicas=3             # Generate a deployment
+  kubectl get deployments                                                 # List Deployments
+  kubectl describe deployment <deployment-name>                           # Describe a deployment
+  kubectl set image deployment/deploy-name nginx=nginx:1.16.1 --record    # Update deployment
+  kubectl scale deployment <deployment-name> --replicas=5                 # Scale deployment manually
+```
+
+A rollout is the process of updating a Deployment. Kubernetes has a built-in kubectl rollout command to manage this process.
+
+```sh
+  kubectl rollout status deployment/<deployment-name>                     # Check status of a deployment
+  kubectl rollout history deployment/<deployment-name>                    # View the history of the deployment's rollouts
+  kubectl rollout undo deployment/<deployment-name>                       # Rollback to the previous revision
+  kubectl rollout undo deployment/<deployment-name> --to-revision=3       # Rollback to a specific revision (e.g., revision 3)
+  kubectl rollout pause deployment/<deployment-name>                      # Pause the rollout to make changes
+  kubectl rollout resume deployment/<deployment-name>                     # Resume the rollout
+  kubectl rollout restart deployment/<deployment-name>                    # Restart the rollout
+```
+
+---
+
 ## 📚 Reference
 
 - [Kubernetes Documentation](https://kubernetes.io/docs/)
