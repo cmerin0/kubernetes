@@ -1,0 +1,28 @@
+# This example creates a policy that only allows Pods with the label role: frontend to access 
+# Pods with the label role: backend on port 6379 (for Redis).
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: backend-policy
+  namespace: default
+spec:
+  # The 'podSelector' defines the Pods the policy applies to.
+  # An empty selector {} applies to all Pods in the namespace.
+  podSelector:
+    matchLabels:
+      role: backend
+  # 'policyTypes' specifies what the policy controls.
+  # 'Ingress' for incoming traffic, 'Egress' for outgoing traffic.
+  policyTypes:
+  - Ingress
+  ingress:
+  # The 'ingress' section defines the rules for incoming connections.
+  - from:
+    # This 'from' block allows traffic from Pods with the label 'role: frontend'.
+    - podSelector:
+        matchLabels:
+          role: frontend
+    # This 'ports' block limits traffic to a specific port and protocol.
+    ports:
+    - protocol: TCP
+      port: 6379

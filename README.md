@@ -75,7 +75,7 @@ kubectl config use-context developer
 
 ---
 
-## 🔐 Pods and Multi-Container Pods 
+## 🔐 Pods(po) and Multi-Container Pods 
 
 A Pod is the smallest and most fundamental unit in Kubernetes. It represents a single instance of a running process in your cluster and can contain one or more containers. The containers within a Pod are always co-located and co-scheduled on the same node, and they share the same network namespace, IP address, and storage volumes.
 
@@ -120,9 +120,7 @@ A Pod is the smallest and most fundamental unit in Kubernetes. It represents a s
 
 ---
 
-## 🔐 Deployments, Replicasets and Rollouts   
-
-1. **Deployments:**
+## 🔐 Deployments(deploy), Replicasets(rs) and Rollouts   
 
 A Deployment is a higher-level Kubernetes object that provides declarative updates for Pods and ReplicaSets. You describe the desired state of your application in a Deployment manifest, and the Deployment controller works constantly to ensure the actual state matches the desired state.
 A Deployment manages a ReplicaSet -> ReplicaSet manages a set of Pods -> Pod contains one or more containers. 
@@ -148,6 +146,50 @@ A rollout is the process of updating a Deployment. Kubernetes has a built-in kub
   kubectl rollout resume deployment/<deployment-name>                     # Resume the rollout
   kubectl rollout restart deployment/<deployment-name>                    # Restart the rollout
 ```
+---
+
+## 🔐 Services and Networking
+
+1. **The kubectl expose command is the main way to create a Service (svc) imperatively:**
+
+  The create service commands will generate the YAML, but they don't automatically link the service to your my-web-app Deployment. To make them work, you would need to add the selector section to the generated YAML file and then apply it. This is why kubectl expose is often preferred for its simplicity—it automatically handles the selector for you.
+
+   ```sh
+    # Expose the 'my-web-app' deployment with a ClusterIP Service
+    kubectl expose deployment my-web-app --name=my-app-service --port=8080
+    kubectl create service clusterip my-app-service --tcp=80:8080 --dry-run=client -o yaml
+
+    # Expose the 'my-web-app' deployment with a NodePort Service
+    kubectl expose deployment my-web-app --name=my-app-nodeport --port=8080 --type=NodePort
+    kubectl create service nodeport my-app-nodeport --tcp=80:8080 --node-port=30007 --dry-run=client -o yaml
+
+    # Expose the 'my-web-app' deployment with a LoadBalancer Service
+    kubectl expose deployment my-web-app --name=my-app-loadbalancer --port=8080 --type=LoadBalancer
+    kubectl create service nodeport my-app-nodeport --tcp=80:8080 --node-port=30007 --dry-run=client -o yaml
+
+    # Explore Available Fields
+    kubectl explain service                               # Explain the top-level Service fields
+    kubectl explain service.spec                          # Explain the 'spec' section of a Service
+    kubectl explain service.spec.ports                    # Explain the 'ports' section of a Service's spec
+
+    # Get info about current services
+    kubectl get services                                  # Get a list of all services
+    kubectl describe service my-app-service               # Get detailed information about a specific service
+    kubectl get services -o wide                          # Get a list of all services and their external IPs
+
+   ```
+
+2. **Network Policies(netpol):**
+
+  A Network Policy is a Kubernetes object that defines how groups of Pods are allowed to communicate with each other and with external endpoints. By default, all traffic between Pods in a namespace is allowed. Network Policies provide a way to enforce fine-grained firewall rules at the Pod level.
+
+  Network Policies are declarative, meaning they are defined in YAML manifests. You must have a Container Network Interface (CNI) plugin (like Calico or Cilium) that supports Network Policies in your cluster for them to work. There are no direct kubectl create networkpolicy commands. Instead, you create the YAML file and apply it.
+
+   ```sh
+    kubectl apply -f backend-policy.yaml                        # Apply the Network Policy manifest to the cluster
+    kubectl get networkpolicy                                   # Get a list of all network policies
+    kubectl describe networkpolicy backend-policy               # Get detailed information about a specific network policy
+   ```
 
 ---
 

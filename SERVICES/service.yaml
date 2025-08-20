@@ -1,0 +1,37 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-app-service   # The name of the Service
+  labels:
+    app: my-web-app       # Labels for identifying this Service
+spec:
+  # The 'selector' is the most important part of a Service.
+  # It defines which Pods this Service will route traffic to.
+  # The labels here must match the labels on your Deployment Pods.
+  selector:
+    app: my-web-app
+  type: NodePort          # The type of Service. Other options are ClusterIP, LoadBalancer, and ExternalName.
+  ports:
+  - protocol: TCP
+    port: 80              # The port the Service will listen on (within the cluster)
+    targetPort: 8080      # The port on the Pods that the traffic will be forwarded to
+    nodePort: 30007       # Optional: A specific port to be used for the NodePort. Must be in the 30000-32767 range.
+  # Optional: You can specify an external IP if you want the Service to be accessible from outside the cluster.
+
+---
+
+# A headless Service manifest example
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-app-headless
+  labels:
+    app: my-app-headless
+spec:
+  clusterIP: None         # This makes the Service "headless"
+  selector:
+    app: my-app-headless  # The selector for the Pods to be discovered
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 8080
