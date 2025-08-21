@@ -1,0 +1,63 @@
+# A Pod using an emptyDir volume
+apiVersion: v1
+kind: Pod
+metadata:
+  name: empty-dir-pod
+spec:
+  containers:
+  - name: main-container
+    image: busybox
+    command: ["/bin/sh", "-c", "echo 'Main container data' > /tmp-data/data.txt && sleep 3600"]
+    volumeMounts:
+    - name: temp-storage
+      mountPath: /tmp-data
+  - name: sidecar-container
+    image: busybox
+    command: ["/bin/sh", "-c", "sleep 5 && cat /tmp-data/data.txt && sleep 3600"]
+    volumeMounts:
+    - name: temp-storage
+      mountPath: /tmp-data
+  volumes:
+  - name: temp-storage
+    emptyDir: {}
+
+---
+# A Pod using a hostPath volume
+apiVersion: v1
+kind: Pod
+metadata:
+  name: host-path-pod
+spec:
+  containers:
+  - name: host-path-container
+    image: busybox
+    command: ["/bin/sh", "-c", "ls -l /host/var-log && sleep 3600"]
+    volumeMounts:
+    - name: host-log-volume
+      mountPath: /host/var-log
+  volumes:
+  - name: host-log-volume
+    hostPath:
+      # path on the node to mount
+      path: /var/log
+      # type of path on the node to mount
+      type: Directory
+
+---
+# An example Pod referencing a PVC
+apiVersion: v1
+kind: Pod
+metadata:
+  name: my-data-pod
+spec:
+  containers:
+    - name: data-container
+      image: busybox
+      command: ["/bin/sh", "-c", "echo 'Hello, world!' > /data/index.html && sleep 3600"]
+      volumeMounts:
+        - name: storage-volume
+          mountPath: /data
+  volumes:
+    - name: storage-volume
+      persistentVolumeClaim:
+        claimName: my-pvc-claim

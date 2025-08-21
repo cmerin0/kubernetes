@@ -196,7 +196,7 @@ A rollout is the process of updating a Deployment. Kubernetes has a built-in kub
 
   ConfigMaps and Secrets are Kubernetes objects used to decouple configuration data from application code. This makes your applications portable and easier to manage across different environments.
 
-  1. **ConfigMaps:**
+  1. **ConfigMaps(cm):**
   Designed for non-sensitive, plaintext configuration data. This could include database hostnames, environment flags, or logging levels.
 
   ```sh
@@ -233,6 +233,33 @@ A rollout is the process of updating a Deployment. Kubernetes has a built-in kub
     kubectl describe secret my-secret                     # Get detailed information about a specific Secret
     kubectl get secret my-secret -o yaml                  # View the base64-encoded contents of the Secret (not recommended)
   ```
+
+---
+
+## 🔐 Volumes
+
+  Unlike containers, Kubernetes Pods are ephemeral. This means that when a Pod is restarted or deleted, any data stored within its filesystem is lost. Volumes solve this problem by providing a way to share data between containers in a Pod and persist data beyond the Pod's lifecycle.
+
+  ### Persistent Volumes(PV):
+  Persistent Volume as a specific, pre-provisioned piece of physical storage. like an actual hard drive or SSD. It's the concrete resource in your cluster that is ready to be used. In this method, a cluster administrator manually creates a PV that represents a specific piece of physical storage. A user then creates a Persistent Volume Claim (PVC) to request storage, and Kubernetes tries to find an existing PV that matches the claim's requirements (like size and access mode). This is a manual process and can be difficult to scale.
+
+  ### Common Volume Types
+  - emptyDir: An empty directory is created when the Pod is first assigned to a node. It is mounted to the container(s) and provides temporary storage. The data is lost when the Pod is removed from the node.
+
+  - hostPath: Mounts a file or directory from the host node's filesystem into a Pod. This is useful for system-level data but is not recommended for production due to security risks and lack of portability.
+
+  - PersistentVolumeClaim (PVC): This is the most common and recommended way to manage storage in a Kubernetes cluster. It abstracts the underlying storage infrastructure, allowing developers to request storage without knowing the specific details of how it's provisioned.
+
+  ```sh
+    # This will create a PVC with 2Gi storage and the default storage class.
+    kubectl create pvc my-pvc --storage=2Gi
+  ```
+  ### StorageClasses(sc)
+  A StorageClass provides a way for administrators to describe the "classes" of storage they offer. It defines the provisioner, parameters, and reclaim policy for dynamically provisioned volumes.  This is the more modern and recommended approach. Instead of creating PVs manually, an administrator creates one or more Storage Classes. 
+
+  - When a user creates a PersistentVolumeClaim (PVC) without a specific storageClassName, it will bind to a PV that already exists with no storageClassName, or to the default StorageClass.
+
+  - When a user creates a PVC and specifies a StorageClass, Kubernetes uses the information in that StorageClass to dynamically provision a new PV that matches the PVC's request. This automates the PV creation process, so a cluster administrator doesn't have to manually create a PV for every request.
 
 ---
 

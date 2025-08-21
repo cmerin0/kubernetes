@@ -1,0 +1,67 @@
+# When you have an storage class you can create PersistentVolumeClaims (PVCs) that request storage from that class.
+# and you don't have to create any PV manually.
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: fast-storage
+provisioner: k8s.io/minikube-hostpath             # The provisioner determines the backend storage technology.
+reclaimPolicy: Delete                             # Options: Delete or Retain. Specifies what happens to the PV when the PVC is deleted.
+volumeBindingMode: Immediate                      # Defines when volume binding and dynamic provisioning should occur.
+# Options: Immediate or WaitForFirstConsumer.
+allowVolumeExpansion: true                        # Allows users to resize the volume if the underlying provisioner supports it.
+parameters:
+  type: pd-ssd                                    # These are provisioner-specific parameters.
+
+---
+# This example provisions a PersistentVolumeClaim for the fast-storage StorageClass.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: my-fast-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce                               # Must match the accessModes of the PV.            
+  resources:
+    requests:
+      storage: 5Gi                                # The PVC requests 5Gi of storage.
+  storageClassName: fast-storage                  # The PVC requests a volume from the "fast-storage" StorageClass.
+
+---
+# This example provisions a high-performance SSD disk in a GKE cluster.
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: gke-ssd
+provisioner: kubernetes.io/gce-pd
+reclaimPolicy: Delete
+volumeBindingMode: WaitForFirstConsumer           # Volume binding mode for GKE SSD
+parameters:
+  type: pd-ssd                                    # Specifies a solid-state drive
+  fsType: ext4                                    # Specifies the filesystem type
+
+---
+# This example provisions a General Purpose SSD (gp2) EBS volume in an EKS cluster.
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: aws-gp2
+provisioner: ebs.csi.aws.com
+reclaimPolicy: Retain
+allowVolumeExpansion: true                        # Allows volume expansion for EBS
+volumeBindingMode: WaitForFirstConsumer           # Volume binding mode for EBS
+parameters:
+  type: gp2                                       # Specifies the type of EBS volume
+  fsType: ext4                                    # Specifies the filesystem type
+
+---
+# This example provisions a managed disk using the Azure Disk CSI driver
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: azure-disk-standard
+provisioner: disk.csi.azure.com
+reclaimPolicy: Delete
+volumeBindingMode: WaitForFirstConsumer           # Volume binding mode for Azure Disk
+parameters:
+  skuName: Standard_LRS                           # LRS stands for Locally Redundant Storage
+  fsType: ext4                                    # Specifies the filesystem type

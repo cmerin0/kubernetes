@@ -1,0 +1,77 @@
+# This PV uses a hostPath, which is suitable for a single-node cluster or for testing.
+# Static Provisioning: In this method, a cluster administrator manually creates a PV that represents a specific piece of physical storage.
+# A user then creates a Persistent Volume Claim (PVC) to request storage,
+# and Kubernetes tries to find an existing PV that matches the claim's requirements (like size and access mode). 
+# This is a manual process and can be difficult to scale.
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: my-hostpath-pv
+spec:
+  capacity:
+    storage: 5Gi                                # Specifies the size of the volume.
+  volumeMode: Filesystem                        # Options: Filesystem (default) or Block.
+  # Options: ReadWriteOnce (RWO), ReadOnlyMany (ROX), ReadWriteMany (RWX), ReadWriteOncePod (RWOP).
+  accessModes:
+    - ReadWriteOnce                             # Specifies how the volume can be mounted.
+  # Options: Retain (default), Recycle (deprecated), Delete.
+  persistentVolumeReclaimPolicy: Retain         # Defines what happens to the PV after the PVC is deleted.
+  storageClassName: standard                    # Name of the StorageClass that a PVC can bind to.
+  hostPath:
+    path: "/mnt/data"                           # The path on the host machine.
+---
+# An example of a PV on Google Compute Engine (GCE)
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: my-gce-pv
+spec:
+  capacity:
+    storage: 100Gi
+  accessModes:
+    - ReadWriteOnce
+  gcePersistentDisk:                            # The volume type is a GCE Persistent Disk.
+    pdName: my-disk-name                        # The name of the GCE disk resource.
+    fsType: ext4                                # Filesystem type.
+---
+# An example of a PV on Amazon Web Services (AWS)
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: my-aws-pv
+spec:
+  capacity:
+    storage: 100Gi
+  accessModes:
+    - ReadWriteOnce
+  awsElasticBlockStore:                          # The volume type is an AWS Elastic Block Store.
+    volumeID: vol-0e78c800a7e6d0a7a
+    fsType: ext4
+---
+# An example of a Network File System (NFS) PV
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: my-nfs-pv
+spec:
+  capacity:
+    storage: 10Gi
+  accessModes:
+    - ReadWriteMany                             # NFS supports mounting the volume by multiple nodes at the same time.
+  nfs:                                          # The volume type is NFS.
+    server: nfs.example.com
+    path: "/exports/data"
+---
+# A declarative PersistentVolumeClaim (PVC) manifest
+# This PVC will bind to a compatible PV, like the ones above.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: my-pvc-claim
+spec:
+  accessModes:
+    - ReadWriteOnce                             # Must match the accessModes of the PV.
+  resources:
+    requests:
+      storage: 2Gi                              # The requested size must be less than or equal to the PV capacity.
+  storageClassName: standard                    # Must match the storageClassName of the PV.
