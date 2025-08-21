@@ -176,7 +176,6 @@ A rollout is the process of updating a Deployment. Kubernetes has a built-in kub
     kubectl get services                                  # Get a list of all services
     kubectl describe service my-app-service               # Get detailed information about a specific service
     kubectl get services -o wide                          # Get a list of all services and their external IPs
-
    ```
 
 2. **Network Policies(netpol):**
@@ -190,6 +189,50 @@ A rollout is the process of updating a Deployment. Kubernetes has a built-in kub
     kubectl get networkpolicy                                   # Get a list of all network policies
     kubectl describe networkpolicy backend-policy               # Get detailed information about a specific network policy
    ```
+
+---
+
+## 🔐 ConfigMaps & Secrets 
+
+  ConfigMaps and Secrets are Kubernetes objects used to decouple configuration data from application code. This makes your applications portable and easier to manage across different environments.
+
+  1. **ConfigMaps:**
+  Designed for non-sensitive, plaintext configuration data. This could include database hostnames, environment flags, or logging levels.
+
+  ```sh
+    # Create a ConfigMap from a literal key-value pair
+    kubectl create configmap my-config --from-literal=database.host=db.example.com --from-literal=log.level=info
+
+    # Create a ConfigMap from a single file
+    kubectl create configmap my-config-file --from-file=app.properties
+
+    # Create a ConfigMap from all files in a directory
+    kubectl create configmap my-config-dir --from-file=config/
+
+    # Get information of configmaps 
+    kubectl get configmap                                 # Get a list of all ConfigMaps
+    kubectl describe configmap my-config                  # Get detailed information about a specific ConfigMap
+    kubectl get configmap my-config -o yaml               # View the contents of the ConfigMap
+   ```
+
+  2. **Secrets:**
+  Designed for sensitive data, such as passwords, API keys, and tokens. Secrets are base64-encoded, which provides a layer of obfuscation, but they are not encrypted by default. For strong security, you should use an external secrets management solution.
+
+  ```sh
+    # Create a generic Secret from literal key-value pairs
+    kubectl create secret generic my-secret --from-literal=api_key=my-secure-key --from-literal=db_password=my-strong-password
+
+    # Create a Secret from a file
+    kubectl create secret generic my-secret-file --from-file=db_credentials.txt
+
+    # Create a Secret for a Docker registry
+    kubectl create secret docker-registry my-registry-secret --docker-server=registry.example.com --docker-username=user --docker-password=pass --docker-email=user@example.com
+
+    # Get information of secrets
+    kubectl get secret                                    # Get a list of all Secrets
+    kubectl describe secret my-secret                     # Get detailed information about a specific Secret
+    kubectl get secret my-secret -o yaml                  # View the base64-encoded contents of the Secret (not recommended)
+  ```
 
 ---
 

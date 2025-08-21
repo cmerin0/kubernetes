@@ -3,21 +3,43 @@ kind: Pod
 metadata:
   name: my-sidecar-pod
 spec:
+  # The main app container that runs the main application
   containers:
   - name: main-app
     image: busybox
     command: ["sh", "-c", "echo 'Main app is running' && sleep 3600"]
+    resources:
+      requests:
+        # Request 64Mi of memory and 50m of CPU for the main app
+        memory: "64Mi"
+        cpu: "50m"
+      limits:
+        # Limit the main app to 128Mi of memory and 250m of CPU
+        memory: "128Mi"
+        cpu: "250m"
     volumeMounts:
     - name: shared-data
       mountPath: /data
 
+  # The log writer sidecar container that logs to a file
   - name: log-writer
     image: busybox
     command: ["sh", "-c", "while true; do echo 'Sidecar logging...' >> /data/logs.txt; sleep 1; done"]
+    resources:
+      requests:
+        # Request 32Mi of memory and 25m of CPU for the log writer
+        memory: "32Mi"
+        cpu: "25m"
+      limits:
+        # Limit the log writer to 64Mi of memory and 100m of CPU
+        memory: "64Mi"
+        cpu: "100m"
     volumeMounts:
     - name: shared-data
       mountPath: /data
 
+  # A shared emptyDir volume that both containers can access
   volumes:
   - name: shared-data
     emptyDir: {}
+
