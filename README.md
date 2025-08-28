@@ -196,7 +196,7 @@ A rollout is the process of updating a Deployment. Kubernetes has a built-in kub
 
   ConfigMaps and Secrets are Kubernetes objects used to decouple configuration data from application code. This makes your applications portable and easier to manage across different environments.
 
-  1. **ConfigMaps(cm):**
+1. **ConfigMaps(cm):**
   Designed for non-sensitive, plaintext configuration data. This could include database hostnames, environment flags, or logging levels.
 
   ```sh
@@ -215,7 +215,7 @@ A rollout is the process of updating a Deployment. Kubernetes has a built-in kub
     kubectl get configmap my-config -o yaml               # View the contents of the ConfigMap
    ```
 
-  2. **Secrets:**
+2. **Secrets:**
   Designed for sensitive data, such as passwords, API keys, and tokens. Secrets are base64-encoded, which provides a layer of obfuscation, but they are not encrypted by default. For strong security, you should use an external secrets management solution.
 
   ```sh
@@ -260,6 +260,129 @@ A rollout is the process of updating a Deployment. Kubernetes has a built-in kub
   - When a user creates a PersistentVolumeClaim (PVC) without a specific storageClassName, it will bind to a PV that already exists with no storageClassName, or to the default StorageClass.
 
   - When a user creates a PVC and specifies a StorageClass, Kubernetes uses the information in that StorageClass to dynamically provision a new PV that matches the PVC's request. This automates the PV creation process, so a cluster administrator doesn't have to manually create a PV for every request.
+
+---
+
+## 🔐 Jobs and CronJobs(cj)
+
+  While Pods are designed for long-running services, Jobs and CronJobs are used to manage finite, one-off, or scheduled tasks
+
+1. **Jobs**
+  A Job is a controller that ensures a specified number of Pods run to completion successfully. Once the task is finished, the Pod terminates and does not restart.
+
+  - Running a batch processing task, like an ETL (Extract, Transform, Load) process.
+  - Performing a one-time database migration.
+  - Executing a script to generate a report.
+
+  ```sh
+    # Create a Job from an image (will run the container\'s default command)
+    kubectl create job my-one-time-job --image=my-image:latest
+  ```
+
+2. **CronJobs(cj)**
+  A CronJob creates a Job on a recurring schedule, similar to the cron utility in Linux.
+
+  - Running a nightly database backup.
+  - Sending a weekly email newsletter.
+  - Periodically checking the health of an external service.
+
+  ```sh
+    # This will create a CronJob that runs 'echo "Hello, world!"' every minute.
+    kubectl create cronjob my-scheduled-job --image=busybox --schedule="*/1 * * * *" -- /bin/sh -c "echo Hello from the scheduled job!"
+  ```
+---
+
+## 🔐 About pods: Resources, Probes and Security Context
+
+1. **Resource Limits and Request:**
+
+Resource management is critical for ensuring application stability and efficient cluster utilization. Requests and Limits are used to define the minimum and maximum CPU and memory resources a container can use.
+
+- resources.requests: The minimum amount of CPU or memory that Kubernetes will guarantee for a container. The scheduler uses this value to decide which node to place the Pod on.
+
+- resources.limits: The maximum amount of CPU or memory a container is allowed to use. If a container exceeds its memory limit, the container will be terminated. If a container exceeds its CPU limit, it will be throttled.
+
+2. **Probes and Health Checks:**
+
+Kubernetes uses probes to determine the health of a container. There are three types of probes:
+
+- livenessProbe: Checks if the container is running and healthy. If the probe fails, Kubernetes will restart the container.
+- readinessProbe: Checks if the container is ready to serve traffic. If the probe fails, Kubernetes will stop sending traffic to the Pod's Service.
+- startupProbe: Checks if the application within the container has started successfully. This is useful for applications that have a long startup time. Once the startup probe succeeds, the liveness and readiness probes begin their checks.
+
+### Probe Types
+
+- httpGet: Performs an HTTP GET request to a specified path on a given port.
+- tcpSocket: Checks if a TCP socket can be opened on a specific port.
+- exec: Executes a command inside the container and checks the exit code (0 for success).
+
+### Other options for Probes
+
+- initialDelaySeconds: The number of seconds to wait after a container has started before the first probe is performed. This gives the application time to initialize and start listening for requests. For example, setting initialDelaySeconds: 5 means Kubernetes will wait 5 seconds before making the first health check.
+
+- periodSeconds: How often (in seconds) the probe should be performed. The default value is 10 seconds. For example, a periodSeconds: 10 means the probe will run every 10 seconds.
+
+- failureThreshold: The number of consecutive times a probe must fail before Kubernetes considers the container's state to be unhealthy. If a probe fails a number of times greater than or equal to this threshold, the container will be restarted (for livenessProbe) or taken out of service (for readinessProbe). The default value is 3.
+
+3. **Security Context:**
+
+A Security Context defines privilege and access control settings for a Pod or a Container. This helps to secure your application by limiting what it can do inside a cluster.
+
+- Pod-level Security Context: Applies the settings to all containers in the Pod.
+- Container-level Security Context: Applies settings only to that specific container. Container-level settings override Pod-level settings.
+
+### Common Settings
+
+* runAsUser: The UID to run the container's entrypoint as.
+* runAsGroup: The GID to run the container's entrypoint as.
+* allowPrivilegeEscalation: Controls whether a process can gain more privileges than its parent process.
+* privileged: Runs the container in privileged mode, giving it access to all devices on the host. This is generally not recommended.
+* capabilities: Adds or drops Linux capabilities (e.g., CAP_NET_BIND_SERVICE).
+
+---
+## 🔐 Taints & Tolerations and Node Affinity
+
+1. **Taints & Tolerations**
+
+Taints are applied to nodes and repel a Pod from being scheduled on that node unless the Pod has a matching Toleration. Think of a taint as a "no entry" sign for most Pods. You would use taints to designate specific nodes for specific workloads, like isolating sensitive data processing Pods or dedicating high-performance nodes to a particular application. A taint has three parts:
+
+- Key: A name, like dedicated-team.
+- Value: An optional value, like data-processing.
+- Effect: Defines what happens if a Pod doesn't tolerate the taint.
+    1. NoSchedule: Pods without a matching toleration will not be scheduled on the node. Existing Pods on the node are not affected. This is the most common effect.
+    2. PreferNoSchedule: The scheduler will try to avoid placing Pods on the node, but will do so if no other suitable nodes are available.
+    3. NoExecute: Pods without a matching toleration will be evicted from the node immediately, and new Pods will not be scheduled on it.
+
+Tolerations are applied to Pods and allow them to be scheduled on nodes with a matching taint. The toleration must match the key, value, and effect of the taint.
+
+```sh
+    # Taint a node called 'node1'
+    kubectl taint nodes node1 dedicated-team=data-processing:NoSchedule
+
+    # To remove the taint from the node
+    kubectl taint nodes node1 dedicated-team=data-processing:NoSchedule-
+
+    # You can also add a taint without a value. This is useful for simple flags.
+    # This marks a node as having special hardware, repelling non-tolerant pods.
+    kubectl taint nodes node2 special-hardware:NoSchedule
+
+    # The 'NoExecute' effect will evict existing pods that don't tolerate the taint.
+    # This is useful for nodes that have failed a health check or are undergoing maintenance.
+    kubectl taint nodes node3 disk-pressure:NoExecute
+
+    # To check for taints on a node, you can use `kubectl describe`.
+    kubectl describe node node1 | grep Taints
+```
+
+2. **Node Affinity**
+
+Node Affinity is a property applied to Pods that attracts them to a set of nodes. While taints repel Pods, node affinity attracts them. It is a more flexible and expressive version of nodeSelector and is used to define rules for Pod scheduling. There are two types of node affinity:
+
+- requiredDuringSchedulingIgnoredDuringExecution: This is a hard rule. The scheduler will only place the Pod on a node that meets the defined criteria. If no such node exists, the Pod will remain in a Pending state.
+
+- preferredDuringSchedulingIgnoredDuringExecution: This is a soft rule. The scheduler will try to find a node that meets the criteria, but if it can't, it will still schedule the Pod on a node that doesn't match the rule. This is useful for optimizing Pod placement without preventing them from being scheduled.
+
+Note on IgnoredDuringExecution: This part of the name means that if a node's labels change after the Pod is already running on it, the Pod will not be evicted. The Pod stays where it is.
 
 ---
 

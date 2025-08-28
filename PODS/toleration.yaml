@@ -1,0 +1,14 @@
+# A Pod with a toleration to match the taint on 'node1'
+apiVersion: v1
+kind: Pod
+metadata:
+  name: tolerant-pod
+spec:
+  containers:
+  - name: my-container
+    image: my-app:latest
+  tolerations:
+  - key: "dedicated-team"
+    operator: "Equal" # Can be "Equal" or "Exists"
+    value: "data-processing"
+    effect: "NoSchedule"

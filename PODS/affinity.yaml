@@ -1,0 +1,33 @@
+# A Pod with node affinity
+apiVersion: v1
+kind: Pod
+metadata:
+  name: affinity-pod
+spec:
+  containers:
+  - name: my-container
+    image: my-app:latest
+  affinity:
+    nodeAffinity:
+      # This node selector term is required
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          # Select nodes with the label disk-type=ssd
+          - key: disk-type
+            operator: In
+            values:
+            - ssd
+      # This node selector term is preferred
+      preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 1
+        preference:
+          matchExpressions:
+          # Select nodes with the label env=production
+          - key: env
+            operator: In
+            values:
+            - production
+# The required rule ensures the Pod must be scheduled on a node with the label disk-type=ssd
+# The preferred rule tells the scheduler to prefer a node with the label env=production. 
+# The weight (1-100) indicates how much this preference matters.

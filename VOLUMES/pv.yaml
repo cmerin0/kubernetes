@@ -44,7 +44,7 @@ spec:
     storage: 100Gi
   accessModes:
     - ReadWriteOnce
-  awsElasticBlockStore:                          # The volume type is an AWS Elastic Block Store.
+  awsElasticBlockStore:                         # The volume type is an AWS Elastic Block Store.
     volumeID: vol-0e78c800a7e6d0a7a
     fsType: ext4
 ---

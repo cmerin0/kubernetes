@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: security-pod
+spec:
+  securityContext:
+    runAsUser: 1001                     # All containers in the Pod will run as user 1001
+    fsGroup: 2001                       # Sets the GID for volumes
+  containers:
+  - name: my-container-1
+    image: my-app:latest
+    securityContext:
+      allowPrivilegeEscalation: false   # Disallows privilege escalation
+  - name: my-container-2
+    image: my-app:latest
+    securityContext:
+      runAsUser: 1002                   # This overrides the Pod-level setting for this container
+      capabilities:
+        add: ["NET_ADMIN"]              # Adds network administration capabilities
